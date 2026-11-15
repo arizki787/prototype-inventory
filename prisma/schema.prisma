@@ -1,0 +1,87 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Type {
+  id        Int      @id @default(autoincrement())
+  typeName  String   @unique @map("type_name")
+  items     Item[]
+
+  @@map("type")
+}
+
+model Grade {
+  id        Int      @id @default(autoincrement())
+  gradeName String   @unique @map("grade_name")
+  items     Item[]
+
+  @@map("grade")
+}
+
+model Item {
+  id                 Int                @id @default(autoincrement())
+  typeId             Int                @map("type_id")
+  gradeId            Int                @map("grade_id")
+  price              Float
+  stock              Int                @default(0)
+
+  type               Type               @relation(fields: [typeId], references: [id])
+  grade              Grade              @relation(fields: [gradeId], references: [id])
+  salesDetails       SalesDetail[]
+  stockCheckDetails  StockCheckDetail[]
+
+  @@unique([typeId, gradeId])
+  @@map("items")
+}
+
+model Sale {
+  id           Int           @id @default(autoincrement())
+  soldAt       DateTime      @default(now()) @map("sold_at")
+  total        Float
+  salesDetails SalesDetail[]
+
+  @@map("sales")
+}
+
+model SalesDetail {
+  id          Int      @id @default(autoincrement())
+  saleId      Int      @map("sale_id")
+  itemId      Int      @map("item_id")
+  qty         Int
+  priceAtSale Float    @map("price_at_sale")
+  subtotal    Float
+
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  item        Item     @relation(fields: [itemId], references: [id])
+
+  @@map("sales_detail")
+}
+
+model StockCheck {
+  id                Int                @id @default(autoincrement())
+  checkedAt         DateTime           @default(now()) @map("checked_at")
+  checkedBy         String?            @map("checked_by")
+  note              String?
+  stockCheckDetails StockCheckDetail[]
+
+  @@map("stock_check")
+}
+
+model StockCheckDetail {
+  id           Int        @id @default(autoincrement())
+  stockCheckId Int        @map("stock_check_id")
+  itemId       Int        @map("item_id")
+  systemQty    Int        @map("system_qty")
+  actualQty    Int        @map("actual_qty")
+  difference   Int
+
+  stockCheck   StockCheck @relation(fields: [stockCheckId], references: [id], onDelete: Cascade)
+  item         Item       @relation(fields: [itemId], references: [id])
+
+  @@map("stock_check_detail")
+}
